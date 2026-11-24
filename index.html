@@ -223,6 +223,7 @@ table.matrix{border-collapse:separate;border-spacing:0;font-size:12px;min-width:
 .matrix thead .iname{z-index:3}
 .matrix .iname div{display:flex;align-items:center;gap:8px}
 .matrix .iname .ico{--sz:26px;border-radius:5px}
+.ktag{font-style:normal;font-family:var(--f-mono);font-size:9.5px;color:var(--mute);border:1px solid var(--line2);border-radius:4px;padding:0 4px;flex:none}
 .matrix .iname span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
 .matrix td.c{width:30px;text-align:center}
 .matrix td.c i{display:block;width:20px;height:20px;margin:3px auto;border-radius:4px;background:var(--c);font-style:normal;font-family:var(--f-mono);font-size:8.5px;line-height:20px;color:#0b1220;font-weight:600;overflow:hidden}
@@ -341,11 +342,12 @@ footer p{margin:0 0 6px;max-width:100ch}
   <!-- BUILDS MÍNIMAS -->
   <section class="view wrap" id="v-builds" data-view="builds" hidden>
     <h2>Builds mínimas</h2>
-    <p class="sub">Las combinaciones con más cargas de Manitas para 2, 3 y 4 objetos, buscadas entre todas las combinaciones posibles. Filtra por estilo para que la build tenga sentido.</p>
+    <p class="sub">Las combinaciones con más cargas de Manitas para 2, 3 y 4 objetos, buscadas entre todas las combinaciones posibles. Un componente sin completar también da su carga, así que a igualdad de cargas gana la opción más barata. Filtra por estilo para que la build tenga sentido.</p>
     <div class="controls">
       <div class="chips" id="archchips"></div>
       <label class="sw"><input type="checkbox" id="allowSup" checked> Objeto de misión de support</label>
       <label class="sw"><input type="checkbox" id="allowBoots" checked> Botas</label>
+      <label class="sw"><input type="checkbox" id="allowComp" checked> Componentes, iniciales y botas básicas</label>
     </div>
     <div class="kcols" id="kcols"></div>
   </section>
@@ -369,9 +371,9 @@ footer p{margin:0 0 6px;max-width:100ch}
     <p class="sub">Las 23 estadísticas que suman carga y cuántos objetos terminados las dan. Las raras son las más valiosas: suelen ser la carga que te falta.</p>
     <div class="sgrid" id="sgrid"></div>
     <h2 style="font-size:32px">Tabla de objetos</h2>
-    <p class="sub">Cada fila es un objeto de la Grieta con sus stats exactos (pasa el ratón por una celda). Ordena por cualquier columna.</p>
+    <p class="sub">Cada fila es un objeto de la Grieta (legendarios, botas, componentes e iniciales) con sus stats exactos (pasa el ratón por una celda). Ordena por cualquier columna.</p>
     <div class="legend" id="legend"></div>
-    <div class="controls" style="margin-bottom:12px"><input class="search" id="mq" type="search" placeholder="Filtrar objetos…" aria-label="Filtrar objetos" style="max-width:320px"></div>
+    <div class="controls" style="margin-bottom:12px"><input class="search" id="mq" type="search" placeholder="Filtrar objetos…" aria-label="Filtrar objetos" style="max-width:320px"><div class="chips" id="mkind"></div></div>
     <div class="matrixwrap"><table class="matrix" id="matrix"></table></div>
   </section>
 </main>
@@ -379,7 +381,7 @@ footer p{margin:0 0 6px;max-width:100ch}
 <footer>
   <div class="wrap">
     <p><b>Cómo cuenta Manitas.</b> Suman los tipos de estadística que dan los objetos (23 en la tienda actual). No cuentan la fuerza adaptable, el vampirismo físico o de hechizos ni la resistencia a ralentizaciones. La pasiva de Garra de Sterak (DA) y el crítico de Flechas de Yun Tal sí cuentan. Penetración plana y en %, y velocidad de movimiento plana y en %, son cargas distintas.</p>
-    <p><b>Supuestos.</b> Para campeones sin maná no contamos Maná ni Regeneración de maná. El «valor aprox.» usa precios de componentes básicos (VH 50 g, PH 20 g, DA 35 g). Los cinco objetos de misión de support dan las mismas stats.</p>
+    <p><b>Supuestos.</b> Para campeones sin maná no contamos Maná ni Regeneración de maná. El «valor aprox.» usa precios de componentes básicos (VH 50 g, PH 20 g, DA 35 g). Los cinco objetos de misión de support dan las mismas stats. Solo se puede llevar un objeto inicial (Doran o Preferencia). Los objetos de support puros (Mikael, Redención, Medallón…) solo se proponen a encantadores o si marcas «Jugar de support».</p>
     <p>Datos de objetos y campeones: Data Dragon <span id="ver"></span>. QuevedoCalculator no está respaldado por Riot Games ni refleja sus opiniones. League of Legends y Riot Games son marcas de Riot Games, Inc.</p>
   </div>
 </footer>
@@ -433,7 +435,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');cl
 const tip=$('#tip');
 document.addEventListener('pointerover',e=>{const el=e.target.closest('[data-tip]');if(!el){tip.style.display='none';return}
   const it=BYID[el.dataset.tip];if(!it)return;
-  tip.innerHTML=`<b>${esc(it.n)}</b><span class="gp">${fmt(it.g)} de oro${it.k==='boots'?' · botas':it.k==='sup'?' · objeto de misión de support':''}</span><div class="chips">${STATS.filter(s=>it.mask&BIT[s.k]).map(s=>chip(s.k,'',sv(it,s.k))).join('')}</div>${it.note?`<p>${esc(it.note)}</p>`:''}${it.p?`<p>${esc(it.p.slice(0,220))}${it.p.length>220?'…':''}</p>`:''}`;
+  tip.innerHTML=`<b>${esc(it.n)}</b><span class="gp">${fmt(it.g)} de oro${it.id===1001?' · botas básicas':it.k==='boots'?' · botas':it.k==='sup'?' · objeto de misión de support':it.k==='comp'?' · componente':it.k==='start'?' · objeto inicial':''}</span><div class="chips">${STATS.filter(s=>it.mask&BIT[s.k]).map(s=>chip(s.k,'',sv(it,s.k))).join('')}</div>${it.note?`<p>${esc(it.note)}</p>`:''}${it.p?`<p>${esc(it.p.slice(0,220))}${it.p.length>220?'…':''}</p>`:''}`;
   tip.style.display='block';});
 document.addEventListener('pointermove',e=>{if(tip.style.display!=='block')return;const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-12;if(y+h>innerHeight-8)y=e.clientY-h-12;tip.style.left=Math.max(8,x)+'px';tip.style.top=Math.max(8,y)+'px'});
 document.addEventListener('scroll',()=>tip.style.display='none',{passive:true});
@@ -449,18 +451,20 @@ function valid(sel,it){if(sel.length>=6)return'Ya tienes 6 objetos';
   if(it.u&&sel.some(x=>x.u===it.u))return'No se combina con '+sel.find(x=>x.u===it.u).n;
   return null}
 // DFS sobre combinaciones de tamaño k. pool ordenado por pop desc.
-function search(pool,k,{need=0,rank,keep=6,stackOf=it=>it.mask,distinct=true}){
-  const n=pool.length,res=[],seen=new Map();
+// maxMode: el ranking ordena primero por cargas, así que se poda lo que no puede alcanzar a los mejores
+function search(pool,k,{need=0,rank,keep=6,stackOf=it=>it.mask,distinct=true,maxMode=false}){
+  const n=pool.length,res=[],seen=new Map();let floor=0;
   const masks=pool.map(stackOf),pops=masks.map(pc);
   const pick=[];
   function rec(start,depth,mask,boots,sup,groups){
-    if(depth===k){const st=pc(mask);if(st<need)return;const items=pick.map(i=>pool[i]);
+    if(depth===k){const st=pc(mask);if(st<need||st<floor)return;const items=pick.map(i=>pool[i]);
       const r={items,mask,st,gold:items.reduce((a,b)=>a+b.g,0)};r.score=rank(r);
       if(distinct){const prev=seen.get(mask);if(prev&&prev.score>=r.score)return;if(prev){const ix=res.indexOf(prev);if(ix>=0)res.splice(ix,1)}seen.set(mask,r)}
-      res.push(r);if(res.length>keep*6){res.sort((a,b)=>b.score-a.score);res.length=keep*3;if(distinct){seen.clear();res.forEach(x=>seen.set(x.mask,x))}}return}
+      res.push(r);if(res.length>keep*6){res.sort((a,b)=>b.score-a.score);res.length=keep*3;if(maxMode)floor=res[keep-1].st;if(distinct){seen.clear();res.forEach(x=>seen.set(x.mask,x))}}return}
     const left=k-depth;
     for(let i=start;i<=n-left;i++){
-      if(need&&pc(mask)+pops[i]*left<need)break; // pops desc: no mejora
+      const bound=pc(mask)+pops[i]*left;
+      if((need&&bound<need)||(floor&&bound<floor))break; // pops desc: no mejora
       const it=pool[i];
       if(it.k==='boots'&&boots)continue;if(it.k==='sup'&&sup)continue;if(it.u&&groups.includes(it.u))continue;
       pick.push(i);rec(i+1,depth+1,mask|masks[i],boots||it.k==='boots',sup||it.k==='sup',it.u?groups.concat(it.u):groups);pick.pop()}
@@ -468,9 +472,11 @@ function search(pool,k,{need=0,rank,keep=6,stackOf=it=>it.mask,distinct=true}){
   rec(0,0,0,false,false,[]);
   res.sort((a,b)=>b.score-a.score);return res.slice(0,keep)}
 // quita objetos dominados (mismas o menos stats y más caros) para la búsqueda general
+const slotCls=it=>it.k==='boots'||it.k==='sup'?it.k:'n';
+const isBasic=it=>it.k==='comp'||it.k==='start'||it.id===1001;
 function prune(pool){const out=[];
   for(const a of pool){let dom=false;for(const b of pool){if(a===b)continue;
-    if((a.mask&b.mask)===a.mask&&(b.g<a.g||(b.g===a.g&&(b.pop>a.pop||b.id<a.id)))&&(!b.u||b.u===a.u)&&(b.k===a.k)){dom=true;break}}
+    if((a.mask&b.mask)===a.mask&&(b.g<a.g||(b.g===a.g&&(b.pop>a.pop||b.id<a.id)))&&(!b.u||b.u===a.u)&&slotCls(b)===slotCls(a)){dom=true;break}}
     if(!dom)out.push(a)}
   return out}
 
@@ -514,7 +520,7 @@ function renderLab(){
   renderPicker();
   if(location.hash.startsWith('#lab')){const h='#lab'+(sel.length?'-'+sel.map(x=>x.id).join('-'):'');if(location.hash!==h)history.replaceState(null,'',h)}
 }
-const KINDS=[['all','Todos'],['item','Objetos'],['boots','Botas'],['sup','Support']];
+const KINDS=[['all','Todos'],['item','Legendarios'],['boots','Botas'],['comp','Componentes'],['start','Iniciales'],['sup','Support']];
 $('#kindchips').innerHTML=KINDS.map(([k,n])=>`<button class="chip" data-kind="${k}" aria-pressed="${k==='all'}">${n}</button>`).join('');
 $('#kindchips').onclick=e=>{const b=e.target.closest('[data-kind]');if(!b)return;kind=b.dataset.kind;$('#kindchips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));renderPicker()};
 $('#statfilter').innerHTML=`<button class="chip" data-sf="" aria-pressed="true">Cualquier stat</button>`+STATS.map(s=>`<button class="chip" data-sf="${s.k}" aria-pressed="false" style="font-family:var(--f-mono);font-size:11px">${esc(s.s)}</button>`).join('');
@@ -538,19 +544,19 @@ const ARCH=[['all','Cualquier cosa'],['M','Mago'],['B','Mago de combate'],['E','
 let arch='all';
 $('#archchips').innerHTML=ARCH.map(([k,n])=>`<button class="chip" data-a="${k}" aria-pressed="${k==='all'}">${n}</button>`).join('');
 $('#archchips').onclick=e=>{const b=e.target.closest('[data-a]');if(!b)return;arch=b.dataset.a;$('#archchips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));renderBuilds()};
-$('#allowSup').onchange=renderBuilds;$('#allowBoots').onchange=renderBuilds;
+$('#allowSup').onchange=renderBuilds;$('#allowBoots').onchange=renderBuilds;$('#allowComp').onchange=renderBuilds;
 function bcard(r,best,extra){const b=bonus(r.st,arch!=='all'&&!ROLE_AP.has(arch));
   return `<div class="panel bcard ${best?'best':''}"><div class="brow">${r.items.map(it=>`<span data-tip="${it.id}">${icon(it,46)}</span>`).join('')}</div>${meter(r.mask)}
   <div class="bfoot"><span class="stk">${r.st}<small>cargas</small></span><span><b>${fmt(r.gold)}</b> g · +${b.ah} VH · +${String(b.af).replace('.',',')} ${arch!=='all'&&!ROLE_AP.has(arch)?'DA':'PH'}</span><button class="linkbtn" data-open="${r.items.map(x=>x.id).join('-')}">Probar ›</button></div></div>`}
 function renderBuilds(){
-  const allowSup=$('#allowSup').checked,allowBoots=$('#allowBoots').checked;
-  let pool=ITEMS.filter(it=>(arch==='all'||(it.r[arch]||0)>=1)&&(allowSup||it.k!=='sup')&&(allowBoots||it.k!=='boots')&&(it.k!=='sup'||it.id===SUP_REP));
+  const allowSup=$('#allowSup').checked,allowBoots=$('#allowBoots').checked,allowComp=$('#allowComp').checked;
+  let pool=ITEMS.filter(it=>(arch==='all'||(it.r[arch]||0)>=1)&&(allowSup||it.k!=='sup')&&(allowBoots||it.k!=='boots')&&(allowComp||!isBasic(it))&&(it.k!=='sup'||it.id===SUP_REP)&&(arch==='all'||arch==='E'||arch==='T'||!it.sp));
   const fit=it=>arch==='all'?0:(it.r[arch]||0);
   pool=arch==='all'?prune(pool):pool;
   pool.sort((a,b)=>b.pop-a.pop);
   let html='';let firstTen=null;
   [2,3,4].forEach(k=>{
-    const top=search(pool,k,{rank:r=>r.st*10000+r.items.reduce((a,x)=>a+fit(x),0)*300-r.gold/10,keep:4});
+    const top=search(pool,k,{rank:r=>r.st*10000+r.items.reduce((a,x)=>a+fit(x),0)*300-r.gold/10,keep:4,maxMode:true});
     if(!top.length)return;const max=top[0].st;if(max>=10&&firstTen===null)firstTen=k;
     html+=`<div class="kcol"><h3><span class="big">${k}</span> objetos</h3><p class="kmeta">Máximo: <b style="color:var(--fg)">${max} cargas</b>${max>=10?' · bonus completo':max>=5?' · bonus de 5':''}</p>${top.map((r,i)=>bcard(r,i===0&&max>=10)).join('')}</div>`});
   $('#kcols').innerHTML=html||'<p>No hay combinaciones con estos filtros.</p>';
@@ -561,8 +567,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-open]');if
 let champ=CHBY[store.get('qc-champ')]||CHBY.Fiddlesticks;let supOn=null;
 function cfit(c,it){let f=0;for(const p in c.r){const v=c.r[p]*(it.r[p]||0);if(v>f)f=v}return f}
 function bestRole(c,it){let f=0,rp=null;for(const p in c.r){const v=c.r[p]*(it.r[p]||0);if(v>f){f=v;rp=p}}return rp}
-function champPool(c,sup){const noBoots=c.id==='Cassiopeia';
-  return ITEMS.filter(it=>{if(it.k==='sup'&&!sup)return false;if(it.k==='boots'&&noBoots)return false;if(!c.mana&&it.mc)return false;return cfit(c,it)>=2})
+// sp: objetos de support (Mikael, Redención, Medallón…): solo si juega de support o es encantador
+function champPool(c,sup,legendOnly){const noBoots=c.id==='Cassiopeia';
+  return ITEMS.filter(it=>{if(it.k==='sup'&&!sup)return false;if(it.sp&&!sup&&!c.r.E)return false;if(legendOnly&&isBasic(it))return false;
+    if(it.k==='boots'&&noBoots)return false;if(!c.mana&&it.mc)return false;return cfit(c,it)>=3})
    .map(it=>({...it,mask:c.mana?it.mask:it.mask&~MANAMASK,fit:cfit(c,it)})).map(it=>({...it,pop:pc(it.mask)}))}
 function supFor(c){if(c.r.E>=2)return 3870;if(c.r.T>=3)return 3869;if(c.r.M>=2||c.r.B>=2)return 3871;return 3877}
 function renderCGrid(){const q=$('#cq').value.trim().toLowerCase();
@@ -571,7 +579,7 @@ $('#cq').oninput=renderCGrid;
 $('#cgrid').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;champ=CHBY[b.dataset.c];supOn=null;store.set('qc-champ',champ.id);history.replaceState(null,'','#campeon-'+champ.id);renderCGrid();renderChamp();if(innerWidth<980)$('#cres').scrollIntoView({behavior:'smooth'})};
 function stepsHTML(items,c,coreN){let m=0;
   return items.map((it,i)=>{const nm=it.mask&~m;m|=it.mask;const rp=bestRole(c,it);
-    const why=it.k==='sup'?'Objeto de misión: 4 stats de golpe':it.k==='boots'?'Botas':(rp?'Encaja como '+ROLE[rp].toLowerCase():'');
+    const why=it.k==='sup'?'Objeto de misión: 4 stats de golpe':it.id===1001?'Botas básicas: sin mejorar':it.k==='boots'?'Botas':it.k==='comp'?'Componente sin completar'+(rp?', de '+ROLE[rp].toLowerCase():''):it.k==='start'?'Objeto inicial':(rp?'Encaja como '+ROLE[rp].toLowerCase():'');
     const fitTxt=it.fit>=6?'encaje alto':it.fit>=3?'encaje medio':'encaje bajo';
     return `<div class="step ${i>=coreN?'extra':''}"><span class="k">${i+1}</span><span data-tip="${it.id}">${icon(it,46)}</span><span class="t"><b>${esc(it.n)}</b> <span style="font-family:var(--f-mono);font-size:11px;color:var(--mute)">${fmt(it.g)} g</span><span class="why">${esc(why)} · ${fitTxt}${nm?` · +${pc(nm)} ${pc(nm)===1?'carga':'cargas'}`:' · sin cargas nuevas'}</span><span class="chips">${STATS.filter(s=>it.mask&BIT[s.k]).map(s=>chip(s.k,nm&BIT[s.k]?'new':'dim')).join('')}</span></span></div>`}).join('')}
 function orderItems(items){ // botas y support primero no: orden por cargas nuevas aportadas
@@ -584,22 +592,27 @@ function fillTo6(core,pool){const out=core.slice();let m=out.reduce((a,x)=>a|x.m
     if(!best)break;out.push(best);m|=best.mask}return out}
 function renderChamp(){const c=champ;if(supOn===null)supOn=c.sup;
   const ad=!Object.keys(c.r).some(p=>ROLE_AP.has(p)&&c.r[p]>=Math.max(...Object.values(c.r)));
-  let pool=champPool(c,supOn).sort((a,b)=>b.pop-a.pop);
   // un solo objeto de misión: el que pega con el campeón
-  const sid=supFor(c);pool=pool.filter(it=>it.k!=='sup'||it.id===sid);
+  const sid=supFor(c);
+  const pool=champPool(c,supOn).filter(it=>it.k!=='sup'||it.id===sid).sort((a,b)=>b.pop-a.pop);
+  const lpool=pool.filter(it=>!isBasic(it));
   const fitRank=r=>r.items.reduce((a,x)=>a+x.fit,0);
+  const same=(a,b)=>a.items.length===b.items.length&&a.items.every(x=>b.items.some(y=>y.id===x.id));
   let kmin=null,minRes=[];
   for(let k=2;k<=5;k++){const r=search(pool,k,{need:10,rank:r=>fitRank(r)*100+r.st*20-r.gold/100,keep:6});if(r.length){kmin=k;minRes=r;break}}
   const opts=[];
   if(kmin){
-    const A=minRes[0];opts.push({t:'Ruta corta',d:`Lo mínimo para el bonus completo: ${kmin} objetos y ya tienes 10 cargas.`,items:orderItems(A.items),core:kmin});
-    const kb=Math.min(kmin+1,6);
-    const B=search(pool,kb,{need:10,rank:r=>fitRank(r)*100/kb*kmin+r.st*15-r.gold/100,keep:8,distinct:false}).find(r=>!r.items.every(x=>A.items.includes(x))&&r.items.some(x=>!A.items.includes(x)));
-    if(B)opts.push({t:'Ruta cómoda',d:`Un objeto más a cambio de piezas más propias de ${c.n}.`,items:orderItems(B.items),core:kb});
-    const base=(B||A).items;const full=fillTo6(orderItems(base),pool);
+    const A=minRes[0],basics=A.items.filter(isBasic).length;
+    opts.push({t:'Ruta corta',d:`Lo mínimo para el bonus completo: ${kmin} objetos y ya tienes 10 cargas.`+(basics?` Incluye ${basics===1?'un componente o inicial':basics+' componentes o iniciales'}: también cuentan aunque no los completes.`:''),items:orderItems(A.items),core:kmin});
+    let B=null;
+    for(let k=Math.max(2,kmin);k<=5&&!B;k++){
+      B=search(lpool,k,{need:10,rank:r=>fitRank(r)*100/k+r.st*15-r.gold/100,keep:8,distinct:false}).find(r=>!same(r,A))||null;
+      if(B)B.k=k}
+    if(B)opts.push({t:'Ruta cómoda',d:`Solo objetos terminados y propios de ${c.n}: ${B.k} objetos hasta las 10 cargas.`,items:orderItems(B.items),core:B.k});
+    const base=(B||A).items.filter(x=>!isBasic(x));const full=fillTo6(orderItems(base),lpool);
     opts.push({t:'Build completa',d:'La ruta cómoda terminada a 6 objetos, priorizando su clase y las cargas extra (cada una es +1 VH).',items:full,core:base.length});
   }else{
-    const best=search(pool,5,{rank:r=>r.st*1000+fitRank(r)*10-r.gold/100,keep:3});
+    const best=search(pool,5,{rank:r=>r.st*1000+fitRank(r)*10-r.gold/100,keep:3,maxMode:true});
     if(best.length)opts.push({t:'Lo máximo posible',d:`Con objetos de su clase no llega a 10 cargas en 5 objetos. Esto es lo que más se acerca.`,items:orderItems(best[0].items),core:5});
   }
   const prof=Object.entries(c.r).sort((a,b)=>b[1]-a[1]).map(([p,w])=>`<span class="tagp"><b>${ROLE[p]}</b> ${'●'.repeat(w)}</span>`).join('');
@@ -623,13 +636,17 @@ function renderStats(){
   renderMatrix();
 }
 let msort={k:'n',dir:-1};
+const KTAG={comp:'comp.',start:'inicial',sup:'support'};
+let mkind='all';
 function renderMatrix(){const q=$('#mq').value.trim().toLowerCase();
-  let rows=ITEMS.filter(it=>!q||it.n.toLowerCase().includes(q)||it.en.toLowerCase().includes(q));
+  let rows=ITEMS.filter(it=>(mkind==='all'||it.k===mkind)).filter(it=>!q||it.n.toLowerCase().includes(q)||it.en.toLowerCase().includes(q));
   const key=msort.k,d=msort.dir===-1?1:-1;rows.sort((a,b)=>{let va,vb;if(key==='n'){va=a.pop;vb=b.pop}else if(key==='g'){va=a.g;vb=b.g}else if(key==='name'){return a.n.localeCompare(b.n,'es')*d}else{va=a.s[key]||0;vb=b.s[key]||0}return (vb-va)*d||a.g-b.g});
   const th=(k,l)=>`<th class="${msort.k===k?'sorted':''}"><button data-ms="${k}" title="Ordenar"><span class="vl">${l}</span></button></th>`;
-  $('#matrix').innerHTML=`<thead><tr><th class="iname"><button data-ms="name" style="background:none;border:0;cursor:pointer;font-family:var(--f-mono);font-size:11px;color:var(--mute)">Objeto</button></th>${th('n','Cargas')}${STATS.map(s=>th(s.k,s.s)).join('')}${th('g','Oro')}</tr></thead><tbody>${rows.map(it=>`<tr><td class="iname"><div data-tip="${it.id}">${icon(it,26)}<span>${esc(it.n)}</span></div></td><td class="n">${it.pop}</td>${STATS.map(s=>it.mask&BIT[s.k]?`<td class="c" title="${esc(s.n)}: ${esc(sv(it,s.k))}"><i style="--c:var(--${s.g})">${esc(String(it.id===3053&&s.k==='AD'?'P':Math.round(it.s[s.k])))}</i></td>`:'<td class="c"></td>').join('')}<td class="g">${fmt(it.g)}</td></tr>`).join('')}</tbody>`}
+  $('#matrix').innerHTML=`<thead><tr><th class="iname"><button data-ms="name" style="background:none;border:0;cursor:pointer;font-family:var(--f-mono);font-size:11px;color:var(--mute)">Objeto</button></th>${th('n','Cargas')}${STATS.map(s=>th(s.k,s.s)).join('')}${th('g','Oro')}</tr></thead><tbody>${rows.map(it=>`<tr><td class="iname"><div data-tip="${it.id}">${icon(it,26)}<span>${esc(it.n)}</span>${KTAG[it.k]&&it.id!==1001||it.id===1001?`<em class="ktag">${it.id===1001?'básicas':KTAG[it.k]}</em>`:''}</div></td><td class="n">${it.pop}</td>${STATS.map(s=>it.mask&BIT[s.k]?`<td class="c" title="${esc(s.n)}: ${esc(sv(it,s.k))}"><i style="--c:var(--${s.g})">${esc(String(it.id===3053&&s.k==='AD'?'P':Math.round(it.s[s.k])))}</i></td>`:'<td class="c"></td>').join('')}<td class="g">${fmt(it.g)}</td></tr>`).join('')}</tbody>`}
 $('#matrix').onclick=e=>{const b=e.target.closest('[data-ms]');if(!b)return;const k=b.dataset.ms;msort=msort.k===k?{k,dir:-msort.dir}:{k,dir:-1};renderMatrix()};
 $('#mq').oninput=renderMatrix;
+$('#mkind').innerHTML=KINDS.map(([k,n])=>`<button class="chip" data-mk="${k}" aria-pressed="${k==='all'}">${n}</button>`).join('');
+$('#mkind').onclick=e=>{const b=e.target.closest('[data-mk]');if(!b)return;mkind=b.dataset.mk;$('#mkind').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));renderMatrix()};
 
 // ---------- rutas ----------
 const rendered={};
